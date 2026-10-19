@@ -88,26 +88,86 @@ function box(x,y,z,w,h,d,front,side,top){
  polygon([[faceX,y0,z0],[faceX,y0,z1],[faceX,y1,z1],[faceX,y1,z0]],side,'#ffffff14');
  polygon([[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]],top,'#ffffff18');
 }
+// An unlabelled street view, built entirely from animated canvas geometry.
+function streetWindow(now){
+ const x=-5.965,z0=-5.95,z1=-3.05,y0=1.80,y1=4.08;
+ const quad=[[x,y0,z0],[x,y0,z1],[x,y1,z1],[x,y1,z0]].map(v=>project(...v));
+ if(quad.some(v=>!v))return;
+ ctx.save();ctx.beginPath();ctx.moveTo(quad[0].x,quad[0].y);for(let i=1;i<4;i++)ctx.lineTo(quad[i].x,quad[i].y);ctx.closePath();ctx.clip();
+ const face=(a,b,c,d,color)=>polygon([[x,a,b],[x,a,d],[x,c,d],[x,c,b]],color);
+ face(z0,z1,y0,y1,'#91a6a9');
+ // Distant buildings and skyline.
+ for(let i=0;i<12;i++){
+  const a=z0+i*(z1-z0)/12,b=a+(z1-z0)/13;
+  const h=2.60+(i*7%5)*.16;
+  face(a,b,2.48,h,i%3===0?'#697a7e':'#76898b');
+  for(let j=0;j<3;j++)line([x+.006,2.63+j*.19,a+.045],[x+.006,2.63+j*.19,b-.035],'#c6bda17a',1);
+ }
+ face(z0,z1,1.80,2.45,'#3e464a');
+ for(let k=0;k<3;k++)line([x+.015,1.96+k*.17,z0],[x+.015,1.96+k*.17,z1],'#b2b1a450',1);
+ // Vehicles travel both ways at differing speeds. No interaction, no label.
+ const t=now*.001;
+ for(let i=0;i<7;i++){
+  const dir=i%2?1:-1, speed=.25+(i%3)*.11;
+  const pos=((t*speed+ i*.231)%1+1)%1;
+  const center=dir===1?z0+pos*(z1-z0+1.2)-.6:z1-pos*(z1-z0+1.2)+.6;
+  const length=i===3?.65:.35+(i%3)*.055;
+  const a=Math.max(z0,center-length/2),b=Math.min(z1,center+length/2);
+  if(b<=a)continue;
+  const base=i%2?2.15:1.90;
+  face(a,b,base,base+.22,['#ad654e','#d5c4a0','#536e80','#c2a66b','#879d9e','#9b5546','#dad6c7'][i]);
+  const cabinA=Math.max(a,center-length*.25),cabinB=Math.min(b,center+length*.20);
+  if(cabinB>cabinA)face(cabinA,cabinB,base+.22,base+.32,'#344b54');
+  for(const wz of [center-length*.31,center+length*.31]){
+   const wheel=project(x+.025,base-.012,wz);
+   if(wheel){ctx.beginPath();ctx.arc(wheel.x,wheel.y,Math.max(1,Math.min(6,24/wheel.d)),0,Math.PI*2);ctx.fillStyle='#1a2529';ctx.fill()}
+  }
+ }
+ ctx.restore();
+ // Raised brass frame and a central mullion, drawn after the scene.
+ line([x+.028,y0,z0],[x+.028,y1,z0],'#d6b780',4);
+ line([x+.028,y0,z1],[x+.028,y1,z1],'#d6b780',4);
+ line([x+.028,y0,z0],[x+.028,y0,z1],'#d6b780',4);
+ line([x+.028,y1,z0],[x+.028,y1,z1],'#d6b780',4);
+ line([x+.03,y0,(z0+z1)/2],[x+.03,y1,(z0+z1)/2],'#c6a571',3);
+}
 function draw(){
  ctx.fillStyle='#151b20';ctx.fillRect(0,0,W,H);
  // Back wall, side walls, floor and ceiling.
  polygon([[-6,0,-11],[6,0,-11],[6,5.2,-11],[-6,5.2,-11]],'#34383a');
  polygon([[-6,0,-11],[-6,0,11],[-6,5.2,11],[-6,5.2,-11]],'#2a3034');
  polygon([[6,0,-11],[6,0,11],[6,5.2,11],[6,5.2,-11]],'#30363a');
- polygon([[-6,0,-11],[6,0,-11],[6,0,11],[-6,0,11]],'#444443');
+ polygon([[-6,0,-11],[6,0,-11],[6,0,11],[-6,0,11]],'#555452');
  polygon([[-6,5.2,-11],[6,5.2,-11],[6,5.2,11],[-6,5.2,11]],'#1d2428');
- for(let z=-10;z<=10;z+=2)line([-6,.012,z],[6,.012,z],'#8b7b6155');
- for(let x=-6;x<=6;x+=2)line([x,.014,-11],[x,.014,11],'#8b7b6155');
+ for(let z=-11;z<=11;z+=2.15)line([-6,.012,z],[6,.012,z],'#b4aba05c');
+ for(let x=-6;x<=6;x+=2.15)line([x,.014,-11],[x,.014,11],'#b4aba05c');
  for(let z=-9;z<=9;z+=4.5){
   line([-6,4.7,z],[6,4.7,z],'#b3996c88',2);
   line([-5.86,.2,z],[-5.86,4.7,z],'#ac946e',3);
   line([5.86,.2,z],[5.86,4.7,z],'#ac946e',3);
  }
+ // Classical ceiling cornices and wall trim.
+ for(const yy of [4.88,5.04]){
+  line([-5.99,yy,-10.99],[-5.99,yy,10.99],'#c5a575',yy>5?3:2);
+  line([5.99,yy,-10.99],[5.99,yy,10.99],'#c5a575',yy>5?3:2);
+  line([-5.99,yy,-10.98],[5.99,yy,-10.98],'#c5a575',yy>5?3:2);
+ }
+ streetWindow(performance.now());
  // Draw objects back-to-front, including six distinct plinths and lamps.
  const ordered=stands.slice().sort((a,b)=>Math.hypot(b[0]-player.x,b[1]-player.z)-Math.hypot(a[0]-player.x,a[1]-player.z));
  for(const [x,z,name] of ordered){
   box(x,.33,z,1.8,.65,1.15,'#66696a','#3b4042','#9b8565');
   if(!['COMPLAINT MACHINE','DECISION MACHINE','FORGETFUL MACHINE'].includes(name))box(x,1.45,z,1.55,1.6,.18,'#20282b','#141a1c','#8d7757');
+  // Small engraved plaque on each plinth, deliberately separate from the image.
+  const label=project(x,.34,z+(player.z>z?.585:-.585));
+  if(label&&label.d>.1){
+   const pw=Math.min(145,1.15*Math.min(W,H)/label.d),ph=Math.max(8,pw*.19);
+   ctx.fillStyle='#a88952';ctx.fillRect(label.x-pw/2,label.y-ph/2,pw,ph);
+   ctx.strokeStyle='#e5ca8d';ctx.strokeRect(label.x-pw/2+2,label.y-ph/2+2,pw-4,ph-4);
+   ctx.fillStyle='#22272a';ctx.font=`bold ${Math.max(5,Math.min(11,pw*.09))}px Georgia`;
+   ctx.textAlign='center';ctx.fillText(name.replace('THE ',''),label.x,label.y+Math.min(4,ph*.2),pw-7);
+  }
+
   if((name==='THE WAITING MACHINE'||name==='THE TRUTH MACHINE'||name==='QUESTION MACHINE'||name==='DECISION MACHINE'||name==='FORGETFUL MACHINE'||name==='COMPLAINT MACHINE')&&(name==='THE WAITING MACHINE'?waitingImage:name==='THE TRUTH MACHINE'?truthImage:name==='DECISION MACHINE'?decisionImage:name==='FORGETFUL MACHINE'?forgetfulImage:name==='COMPLAINT MACHINE'?complaintImage:questionImage).complete){
    const faceZ=z+(player.z>z?.13:-.13);
    const cutout=['COMPLAINT MACHINE','DECISION MACHINE','FORGETFUL MACHINE'].includes(name);
@@ -119,12 +179,14 @@ function draw(){
   }
   const p=project(x,1.5,z+(player.z>z?.11:-.11));
   if(p&&p.d>0.1&&name!=='THE WAITING MACHINE'&&name!=='THE TRUTH MACHINE'&&name!=='QUESTION MACHINE'&&name!=='DECISION MACHINE'&&name!=='FORGETFUL MACHINE'&&name!=='COMPLAINT MACHINE'){const fs=Math.max(8,Math.min(22,230/p.d));ctx.font=`bold ${fs}px system-ui`;ctx.textAlign='center';ctx.fillStyle='#f2d9a3';ctx.fillText(name,p.x,p.y,Math.max(45,1.5*Math.min(W,H)/p.d))}
-  const light=project(x,4.65,z);if(light){const radius=Math.min(65,200/light.d);const g=ctx.createRadialGradient(light.x,light.y,1,light.x,light.y,radius);g.addColorStop(0,'#ffdfa4b0');g.addColorStop(1,'#ffdfa400');ctx.fillStyle=g;ctx.beginPath();ctx.arc(light.x,light.y,radius,0,Math.PI*2);ctx.fill()}
+  const light=project(x,4.65,z);if(light){const radius=Math.min(65,200/light.d);const g=ctx.createRadialGradient(light.x,light.y,1,light.x,light.y,radius);g.addColorStop(0,'#ffe2a9dd');g.addColorStop(1,'#ffdfa400');ctx.fillStyle=g;ctx.beginPath();ctx.arc(light.x,light.y,radius,0,Math.PI*2);ctx.fill()}
  }
  const sign=project(0,3.2,-10.88);
  if(sign){ctx.fillStyle='#e9c98d';ctx.textAlign='center';ctx.font=`bold ${Math.max(11,Math.min(38,350/sign.d))}px Georgia`;ctx.fillText('MUSEUM OF USELESS MACHINES',sign.x,sign.y,Math.min(W*.8,6.4*Math.min(W,H)/sign.d))}
  const creditSign=project(0,2.76,-10.88);
  if(creditSign){ctx.fillStyle='#e9c98d';ctx.textAlign='center';ctx.font=`${Math.max(8,Math.min(21,195/creditSign.d))}px Georgia`;ctx.fillText('By Kris Truyers & Omnia 2026',creditSign.x,creditSign.y,Math.min(W*.65,4.5*Math.min(W,H)/creditSign.d))}
+ const exitSign=project(0,1.92,-10.88);
+ if(exitSign){ctx.fillStyle='#d7b87d';ctx.textAlign='center';ctx.font=`italic ${Math.max(8,Math.min(19,155/exitSign.d))}px Georgia`;ctx.fillText('THANK YOU FOR WASTING YOUR TIME.',exitSign.x,exitSign.y,Math.min(W*.7,5*Math.min(W,H)/exitSign.d))}
 }
 let prev=performance.now();
 function animate(now){
