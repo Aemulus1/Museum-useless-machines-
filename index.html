@@ -110,7 +110,9 @@ function draw(){
   if(!['COMPLAINT MACHINE','DECISION MACHINE','FORGETFUL MACHINE'].includes(name))box(x,1.45,z,1.55,1.6,.18,'#20282b','#141a1c','#8d7757');
   if((name==='THE WAITING MACHINE'||name==='THE TRUTH MACHINE'||name==='QUESTION MACHINE'||name==='DECISION MACHINE'||name==='FORGETFUL MACHINE'||name==='COMPLAINT MACHINE')&&(name==='THE WAITING MACHINE'?waitingImage:name==='THE TRUTH MACHINE'?truthImage:name==='DECISION MACHINE'?decisionImage:name==='FORGETFUL MACHINE'?forgetfulImage:name==='COMPLAINT MACHINE'?complaintImage:questionImage).complete){
    const faceZ=z+(player.z>z?.13:-.13);
-   const a=project(x-.78,2.28,faceZ),b=project(x+.78,.80,faceZ);
+   const cutout=['COMPLAINT MACHINE','DECISION MACHINE','FORGETFUL MACHINE'].includes(name);
+   const lower=cutout?.16:0;
+   const a=project(x-.78,2.28-lower,faceZ),b=project(x+.78,.80-lower,faceZ);
    if(a&&b){const left=Math.min(a.x,b.x),top=Math.min(a.y,b.y),ww=Math.abs(b.x-a.x),hh=Math.abs(b.y-a.y);
      if(ww<4000&&hh<4000)ctx.drawImage(name==='THE WAITING MACHINE'?waitingImage:name==='THE TRUTH MACHINE'?truthImage:name==='DECISION MACHINE'?decisionImage:name==='FORGETFUL MACHINE'?forgetfulImage:name==='COMPLAINT MACHINE'?complaintImage:questionImage,left,top,ww,hh);
    }
