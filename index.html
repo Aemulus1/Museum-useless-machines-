@@ -107,7 +107,7 @@ function draw(){
  const ordered=stands.slice().sort((a,b)=>Math.hypot(b[0]-player.x,b[1]-player.z)-Math.hypot(a[0]-player.x,a[1]-player.z));
  for(const [x,z,name] of ordered){
   box(x,.33,z,1.8,.65,1.15,'#66696a','#3b4042','#9b8565');
-  if(name!=='COMPLAINT MACHINE')box(x,1.45,z,1.55,1.6,.18,'#20282b','#141a1c','#8d7757');
+  if(!['COMPLAINT MACHINE','DECISION MACHINE','FORGETFUL MACHINE'].includes(name))box(x,1.45,z,1.55,1.6,.18,'#20282b','#141a1c','#8d7757');
   if((name==='THE WAITING MACHINE'||name==='THE TRUTH MACHINE'||name==='QUESTION MACHINE'||name==='DECISION MACHINE'||name==='FORGETFUL MACHINE'||name==='COMPLAINT MACHINE')&&(name==='THE WAITING MACHINE'?waitingImage:name==='THE TRUTH MACHINE'?truthImage:name==='DECISION MACHINE'?decisionImage:name==='FORGETFUL MACHINE'?forgetfulImage:name==='COMPLAINT MACHINE'?complaintImage:questionImage).complete){
    const faceZ=z+(player.z>z?.13:-.13);
    const a=project(x-.78,2.28,faceZ),b=project(x+.78,.80,faceZ);
