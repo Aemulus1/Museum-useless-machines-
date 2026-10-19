@@ -129,29 +129,48 @@ function texturedQuad(img,vertices,u0,v0,u1,v1){
  const t=[{x:u0*sw,y:v1*sh},{x:u1*sw,y:v1*sh},{x:u1*sw,y:v0*sh},{x:u0*sw,y:v0*sh}];
  tri(a[0],a[1],a[2],t[0],t[1],t[2]);tri(a[0],a[2],a[3],t[0],t[2],t[3]);
 }
-function streetWindow(now){
- const x=-5.963,z0=-6.15,z1=-2.75,y0=1.65,y1=4.26;
- polygon([[x,y0,z0],[x,y0,z1],[x,y1,z1],[x,y1,z0]],'#1a303d');
- if(trafficPhoto.complete&&trafficPhoto.naturalWidth){
-  // Subdivided photographic panels keep the perspective anchored to the wall.
-  const drift=(now*.000011)%0.45;
-  for(let k=0;k<28;k++){
-   const za=z0+(z1-z0)*k/28,zb=z0+(z1-z0)*(k+1)/28;
-   const ua=((k/28+drift)%1),ub=ua+1/28;
-   if(ub<=1)texturedQuad(trafficPhoto,[[x+.005,y0,za],[x+.005,y0,zb],[x+.005,y1,zb],[x+.005,y1,za]],ua,0,ub,1);
-  }
+// The seventh time-waster: a fixed, old-fashioned red LED announcement board.
+const nonsense='GEACHTE BEZOEKER. DE COMMISSIE VOOR OVERBODIGE MEDEDELINGEN DEELT MEE DAT ER OP DIT MOMENT GEEN MEDEDELINGEN ZIJN. DIT BERICHT WERD GOEDGEKEURD DOOR DE SUBCOMMISSIE DIE NOG NIET BESTAAT. WIE DIT LEEST, WORDT VRIENDELIJK VERZOCHT VERDER TE LEZEN. DE VOLGENDE ZIN BEVAT GEEN NIEUWE INFORMATIE. DE VORIGE ZIN EVENMIN. ER WORDT MOMENTEEL ONDERZOCHT OF HET MOGELIJK IS OM DE TIJD DIE U HIER DOORBRENGT TERUG TE VORDEREN. DAT ONDERZOEK IS VOOR ONBEPAALDE TIJD UITGESTELD. WIJ DANKEN U VOOR UW GEDULD. '; 
+const ledCanvas=document.createElement('canvas');ledCanvas.width=900;ledCanvas.height=510;
+const ledCtx=ledCanvas.getContext('2d');
+function ledBoard(now){
+ const x=-5.956,z0=-6.15,z1=-2.75,y0=1.65,y1=4.26;
+ // Opaque board fixed to the left wall, no window or moving scenery.
+ polygon([[x,y0,z0],[x,y0,z1],[x,y1,z1],[x,y1,z0]],'#08090b');
+ const c=ledCtx,w=ledCanvas.width,h=ledCanvas.height;
+ c.fillStyle='#101010';c.fillRect(0,0,w,h);
+ c.fillStyle='#252525';c.fillRect(17,18,w-34,h-36);
+ c.fillStyle='#050607';c.fillRect(40,47,w-80,h-94);
+ c.strokeStyle='#605748';c.lineWidth=8;c.strokeRect(18,19,w-36,h-38);
+ c.font='bold 29px monospace';c.textAlign='center';c.fillStyle='#ad9580';c.fillText('OFFICIELE MEDEDELING',w/2,86);
+ const visible=nonsense.slice(0,Math.floor(now/88)% (nonsense.length+70));
+ c.font='bold 32px monospace';c.textAlign='left';
+ const words=visible.split(' ');let line='',lines=[];
+ for(const word of words){const test=line?line+' '+word:word;if(c.measureText(test).width>740&&line){lines.push(line);line=word}else line=test}lines.push(line);
+ const shown=lines.slice(-9);c.shadowColor='#ff1200';c.shadowBlur=12;c.fillStyle='#f12c1b';
+ shown.forEach((ln,i)=>c.fillText(ln,77,141+i*35));c.shadowBlur=0;
+ // Texture mapping uses a fixed wall plane: it never rotates with the visitor.
+ texturedQuad(ledCanvas,[[x+.012,y0,z0],[x+.012,y0,z1],[x+.012,y1,z1],[x+.012,y1,z0]],0,0,1,1);
+ for(const xx of [x+.025,x+.035]){
+  const color=xx>x+.03?'#b89963':'#463b2c';
+  line([xx,y0,z0],[xx,y1,z0],color,5);line([xx,y0,z1],[xx,y1,z1],color,5);
+  line([xx,y0,z0],[xx,y0,z1],color,5);line([xx,y1,z0],[xx,y1,z1],color,5);
  }
- // Recessed frame, thick brass surround, and a reflection on the glass.
- for(const xx of [x+.012,x+.032]){
-  const c=xx>x+.02?'#dfba78':'#45321f';
-  line([xx,y0,z0],[xx,y1,z0],c,xx>x+.02?5:8);
-  line([xx,y0,z1],[xx,y1,z1],c,xx>x+.02?5:8);
-  line([xx,y0,z0],[xx,y0,z1],c,xx>x+.02?5:8);
-  line([xx,y1,z0],[xx,y1,z1],c,xx>x+.02?5:8);
- }
- line([x+.04,y0,(z0+z1)/2],[x+.04,y1,(z0+z1)/2],'#b99052',5);
- line([x+.04,(y0+y1)/2,z0],[x+.04,(y0+y1)/2,z1],'#b99052',3);
 }
+const plaqueCanvases={};
+function plaqueTexture(name){
+ if(plaqueCanvases[name])return plaqueCanvases[name];
+ const c=document.createElement('canvas');c.width=600;c.height=150;const t=c.getContext('2d');
+ t.fillStyle='#b68d49';t.fillRect(0,0,600,150);
+ t.fillStyle='#f4d998';t.fillRect(9,9,582,132);
+ t.fillStyle='#b18a50';t.fillRect(16,16,568,118);
+ t.fillStyle='#ead2a0';t.fillRect(22,22,556,106);
+ t.strokeStyle='#6b4c26';t.lineWidth=4;t.strokeRect(29,29,542,92);
+ t.fillStyle='#2d2217';t.textAlign='center';t.textBaseline='middle';
+ t.font='bold 42px Georgia';t.fillText(name.replace('THE ',''),300,78,520);
+ plaqueCanvases[name]=c;return c;
+}
+
 function draw(){
  ctx.fillStyle='#11151a';ctx.fillRect(0,0,W,H);
  // Deep blue museum walls, physically fixed in the same walkable space.
@@ -191,7 +210,7 @@ function draw(){
  for(const x of [-5.3,-3.8,-2.3,-.8,.7,2.2,3.7,5.2]){
   line([x,4.93,-10.95],[x,4.93,10.95],'#59462d88',1);
  }
- streetWindow(performance.now());
+ ledBoard(performance.now());
  // Ceiling track spotlights and warm glows.
  for(const z of [-8,-2,4])for(const x of [-4.4,4.4]){
   line([x-.30,5.13,z],[x+.30,5.13,z],'#94774b',3);
@@ -203,14 +222,7 @@ function draw(){
    ctx.fillStyle=g;ctx.beginPath();ctx.arc(light.x,light.y,r,0,Math.PI*2);ctx.fill();
   }
  }
- // A real doorway shape, with the museum's farewell above it.
- polygon([[-1.53,.02,-10.962],[1.53,.02,-10.962],[1.53,2.43,-10.962],[-1.53,2.43,-10.962]],'#080e15');
- for(const offset of [0,.12,.24]){
-  const ww=1.57+offset;
-  line([-ww,.02,-10.90+offset],[-ww,2.49+offset,-10.90+offset],'#bd985f',4);
-  line([ww,.02,-10.90+offset],[ww,2.49+offset,-10.90+offset],'#bd985f',4);
-  line([-ww,2.49+offset,-10.90+offset],[ww,2.49+offset,-10.90+offset],'#bd985f',4);
- }
+ // The rear wall remains uninterrupted beneath the museum title.
  // Draw back-to-front so the exhibits stay exactly where they were.
  const ordered=stands.slice().sort((a,b)=>Math.hypot(b[0]-player.x,b[1]-player.z)-Math.hypot(a[0]-player.x,a[1]-player.z));
  for(const [x,z,name] of ordered){
@@ -219,34 +231,18 @@ function draw(){
   line([x-.9,.664,z+.576],[x+.9,.664,z+.576],'#c8a46c',2);
   line([x-.9,.12,z+.576],[x+.9,.12,z+.576],'#9e784b',1);
   const cutout=['COMPLAINT MACHINE','DECISION MACHINE','FORGETFUL MACHINE'].includes(name);
-  if(!cutout)box(x,1.45,z,1.55,1.6,.18,'#171d23','#101419','#7e674b');
-  // Plaques face the gallery aisle (front only), never the visitor.
-  const plaqueZ=z+.581;
-  const a=project(x-.51,.42,plaqueZ),b=project(x+.51,.22,plaqueZ);
-  if(player.z>z&&a&&b){
-   const left=Math.min(a.x,b.x),top=Math.min(a.y,b.y),ww=Math.abs(b.x-a.x),hh=Math.abs(b.y-a.y);
-   if(ww<700&&hh<250&&ww>2&&hh>1){
-    ctx.fillStyle='#b99557';ctx.fillRect(left,top,ww,hh);
-    ctx.strokeStyle='#edcb8c';ctx.strokeRect(left+1,top+1,ww-2,hh-2);
-    ctx.fillStyle='#231c13';ctx.font=`bold ${Math.max(5,Math.min(13,hh*.55))}px Georgia`;
-    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(name.replace('THE ',''),left+ww/2,top+hh/2,ww-5);
-    ctx.textBaseline='alphabetic';
-   }
-  }
-  // Original images preserved; never mirror them onto the back of an exhibit.
-  if(player.z>z-.02){
+  // Front-facing, fixed museum plaque, perspective-correct and invisible from behind.
+  if(player.z>z+.02){
+   const plaque=plaqueTexture(name);
+   texturedQuad(plaque,[[x-.52,.19,z+.583],[x+.52,.19,z+.583],[x+.52,.44,z+.583],[x-.52,.44,z+.583]],0,0,1,1);
    const img=name==='THE WAITING MACHINE'?waitingImage:name==='THE TRUTH MACHINE'?truthImage:name==='DECISION MACHINE'?decisionImage:name==='FORGETFUL MACHINE'?forgetfulImage:name==='COMPLAINT MACHINE'?complaintImage:questionImage;
    if(img.complete&&img.naturalWidth){
-    const lower=cutout?.16:0,faceZ=z+.13;
-    const aa=project(x-.78,2.28-lower,faceZ),bb=project(x+.78,.80-lower,faceZ);
-    if(aa&&bb){const left=Math.min(aa.x,bb.x),top=Math.min(aa.y,bb.y),ww=Math.abs(bb.x-aa.x),hh=Math.abs(bb.y-aa.y);
-     if(ww<4000&&hh<4000)ctx.drawImage(img,left,top,ww,hh);
-    }
+    const lower=cutout?.16:0;
+    // Flat front plane: no billboarding, no side or reverse image.
+    texturedQuad(img,[[x-.78,.80-lower,z+.13],[x+.78,.80-lower,z+.13],[x+.78,2.28-lower,z+.13],[x-.78,2.28-lower,z+.13]],0,0,1,1);
    }
-  }else{
-   // A real dark back instead of a floating reversed front image.
-   box(x,1.39,z,1.55,1.50,.17,'#20262a','#171b20','#63553f');
   }
+
  }
  const sign=project(0,3.73,-10.88);
  if(sign){ctx.fillStyle='#e9c98d';ctx.textAlign='center';ctx.font=`bold ${Math.max(11,Math.min(38,350/sign.d))}px Georgia`;ctx.fillText('MUSEUM OF USELESS MACHINES',sign.x,sign.y,Math.min(W*.8,6.4*Math.min(W,H)/sign.d))}
